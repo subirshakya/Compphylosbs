@@ -55,7 +55,7 @@ print
 compseq = "" #New list
 for letter in range(len(seq)-1, -1, -1): 
 	compseq = compseq + seq[letter] #Reverses sequence
-compseq =  compseq.replace("a","G").replace("t","C").replace("c","T").replace("g","A").lower() #Complements sequence
+compseq =  compseq.replace("a","T").replace("t","A").replace("c","G").replace("g","C").lower() #Complements sequence
 print "The reverse complement of the sequence is:\n", compseq
 
 #13th and 14th codon position

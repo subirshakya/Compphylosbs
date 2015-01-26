@@ -125,7 +125,7 @@ def discsampl(sampsize):
 	for value in proportions:
 		freqlist.append(propfreq[value]/sampsize)
 		pmffreqlist.append(bernoulli(value, 400, 0.5))
-		print "{} of event 1:{} of event 2".format(value, 400-value), "\t\t", propfreq[value]/sampsize,"\t\t", round(bernoulli(value, 400, 0.5),5) #Get Binomial PMF for observed occurrences in 400 sites with probability 0.5
+		print "{0} of event 1:{1} of event 2".format(value, 400-value), "\t\t", propfreq[value]/sampsize,"\t\t", round(bernoulli(value, 400, 0.5),5) #Get Binomial PMF for observed occurrences in 400 sites with probability 0.5
 	a = raw_input("Press enter to graph data")
 	plt.plot(proportions, freqlist, 'ro', label="Observed (Sampled)")
 	plt.plot(proportions, pmffreqlist, label="Expected (PMF)")

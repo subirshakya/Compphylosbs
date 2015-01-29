@@ -135,4 +135,4 @@ def discsampl(sampsize):
 	plt.show()
 discsampl(100)
 a = raw_input("Press enter to repeat with 10000 trials")
-discsampl(1000)
+discsampl(10000)

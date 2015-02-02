@@ -11,7 +11,7 @@ def multiplier(num1, num2=1):
 		start -= 1 #Decrease larger number by 1
 	return product #Return product
 		
-def bincoeffb(n, k):
+def bincoeffb(k, n):
 	""" Calculate binomial coefficient (factoring first) from n sets choosing k subsets"""
 	try:
 		coeff = multiplier(n, n-k+1)/multiplier(k)
@@ -21,8 +21,13 @@ def bincoeffb(n, k):
 	
 def bernoulli(k, n, p):
 	"""Calculate a Probability Mass Function (PMF) of a binomial distribution with k successes in n Bernoulli trials with probability p"""
-	PMF = bincoeffb(n, k)*pow(p,k)*pow((1-p),(n-k))
+	PMF = bincoeffb(k, n)*pow(p,k)*pow((1-p),(n-k))
 	return PMF
+
+def likelihood (k, n, p):
+	"""Calculate likelihood"""
+	likelival = pow(p,k)*pow((1-p),(n-k))
+	return likelival
 
 def hillclimb(data, prob, likeli=0, diff = 0.1, oldvalue=1, direction="RIGHT"):
 	"""Calculate maximum likelihood for a dataset"""
@@ -36,7 +41,7 @@ def hillclimb(data, prob, likeli=0, diff = 0.1, oldvalue=1, direction="RIGHT"):
 		else: #Recurvise function to look for maximum point
 			oldvalue = likeli
 			problist = [prob-diff, prob, prob+diff]
-			valuelist = [bernoulli(data[0], data[1], prob-diff), bernoulli(data[0], data[1], prob), bernoulli(data[0], data[1], prob+diff)]
+			valuelist = [likelihood(data[0], data[1], prob-diff), likelihood(data[0], data[1], prob), likelihood(data[0], data[1], prob+diff)]
 			if direction == "LEFT":
 				problist = problist[::-1]
 				valuelist = valuelist[::-1]
@@ -52,15 +57,14 @@ data = ["pass","pass","pass","pass","pass"]
 data = [y.lower() for y in data]
 dataval = data.count("pass")
 numTrials = len(data)
-data = (dataval, numTrials)
+#data = (dataval, numTrials)
+data =(12,20)
 
 if data[0] == data[1]: #Some special cases
 	maxlikeli,  probability = 1.0, 1.0
 elif data[0] == 0: # Special case 2
 	maxlikeli, probability = 1.0, 0.0
 else:
-	startlist = [y/10 for y in range(0,10,1)]
-	berns = [bernoulli(data[0],data[1], y) for y in startlist] 
-	prob = startlist[berns.index(random.choice(berns))] #To randomly choose starting probability
-	maxlikeli, probability = hillclimb(data, prob)
-print "The maximum likelihood for given data is {0} for probability of {1}".format(round(maxlikeli, 5), round(probability, 5))
+	prob = random.random() #To randomly choose starting probability
+	maxlikeli, probability = hillclimb(data, 0.5)
+print "The maximum likelihood for given data is {0:.4e} for probability of {1}".format(maxlikeli, round(probability, 5))

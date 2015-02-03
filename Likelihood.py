@@ -25,25 +25,18 @@ def bernoulli(k, n, p):
 	PMF = bincoeffb(k, n)*pow(p,k)*pow((1-p),(n-k))
 	return PMF
 
-def likeli (k, n, p):
-	"""Calculate likelihood"""
-	likelival = bernoulli(k, n, p)/bincoeffb(k, n)
-	return likelival
-
 """Enter data below as pass and fail separated by commas"""
 data = ["pass","pass","pass","pass","fail"]
 data = [y.lower() for y in data]
-#dataval = data.count("pass")
-#numTrials = len(data)
-dataval = 12
-numTrials = 20
+dataval = data.count("pass")
+numTrials = len(data)
 
 list = [x/100 for x in range(0,101,5)] #List with probabilities in range 0 to 1 spaced by 0.05
 
 likelist = []
 
 for val in list: #Calculate likelihoods
-	num = likeli(dataval,numTrials,val)
+	num = bernoulli(4,5,val)
 	likelist.append(num)
 
 maxval = max(likelist)

@@ -24,11 +24,6 @@ def bernoulli(k, n, p):
 	PMF = bincoeffb(k, n)*pow(p,k)*pow((1-p),(n-k))
 	return PMF
 
-def likelihood (k, n, p):
-	"""Calculate likelihood"""
-	likelival = pow(p,k)*pow((1-p),(n-k))
-	return likelival
-
 def hillclimb(data, prob, likeli=0, diff = 0.1, oldvalue=1, direction="RIGHT"):
 	"""Calculate maximum likelihood for a dataset"""
 	while diff >= 0.001: #Terminator loop
@@ -41,7 +36,7 @@ def hillclimb(data, prob, likeli=0, diff = 0.1, oldvalue=1, direction="RIGHT"):
 		else: #Recurvise function to look for maximum point
 			oldvalue = likeli
 			problist = [prob-diff, prob, prob+diff]
-			valuelist = [likelihood(data[0], data[1], prob-diff), likelihood(data[0], data[1], prob), likelihood(data[0], data[1], prob+diff)]
+			valuelist = [bernoulli(data[0], data[1], prob-diff), bernoulli(data[0], data[1], prob), bernoulli(data[0], data[1], prob+diff)]
 			if direction == "LEFT":
 				problist = problist[::-1]
 				valuelist = valuelist[::-1]
@@ -58,7 +53,7 @@ data = [y.lower() for y in data]
 dataval = data.count("pass")
 numTrials = len(data)
 #data = (dataval, numTrials)
-data =(12,20)
+data =(190,200)
 
 if data[0] == data[1]: #Some special cases
 	maxlikeli,  probability = 1.0, 1.0

@@ -21,8 +21,8 @@ def sample(list, prob, outputsize = 1):
 
 def Markov(list, condMat, steps, start, timed = "yes"):
 	"""Processes a Markov chain from a list to a defined number of steps"""
-	output = []
-	while steps!=0:
+	output = [start]
+	while steps!=1:
 		problist = condMat[list.index(start)]
 		next = sample(list, problist)
 		start = next[0]
@@ -45,7 +45,7 @@ start = scipy.random.choice(list)
 
 for i in range(100):
 	output = Markov(list, CondMat, 100, start, timed="no")
-	print start, output[99]
+	print output[0], output[99]
 """
 #mutator
 seq = "ATTCATTAGAGTTCCATAT"

@@ -21,8 +21,8 @@ def sample(list, prob, outputsize = 1):
 
 def Markov(list, condMat, steps, start, timed = "yes"):
 	"""Processes a Markov chain from a list to a defined number of steps"""
-	output = []
-	while steps!=0:
+	output = [start]
+	while steps!=1:
 		problist = condMat[list.index(start)]
 		next = sample(list, problist)
 		start = next[0]
@@ -38,8 +38,7 @@ list = ("A", "B") #Provide list of names
 InitProb = (0, 1) # Provide probabilities of items
 
 #Define conditional matrix:
-CondMat = [[0 for y in range(len(InitProb))] for y in range(len(InitProb))]
-CondMat[0][0], CondMat[0][1], CondMat[1][0], CondMat[1][1] = 0.50, 0.50, 0.50, 0.90 #pA2A, pA2B, pB2A, pB2B
+CondMat = [[0.50, 0.50], [0.50, 0.50]] #pA2A, pA2B, pB2A, pB2B
 start = scipy.random.choice(list)
 Markov(list, CondMat, 25, start)
 #print Markov(list, CondMat, 25, start, timed="no")

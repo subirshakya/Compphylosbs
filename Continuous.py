@@ -51,32 +51,68 @@ class Functions():
 		
 	def expprob(self, start, end, time):
 		"""Calculate probablity for start and end of event"""
-		if (model.time - time) >= 0:
+		prob = model.calcStateChange(start, end, time=time)
+		"""if model.time >= time >=0:
 			try:
 				prob = model.calcStateChange(start, end, time=time)
 			except:
 				prob = 0
 		else:
 			prob = 0
+		"""
 		return prob
 
 	def hillclimb(self, start, end, time, likeli=0, diff = 0.1, oldvalue=1):
 		"""Calculate maximum likelihood for a dataset"""
-		while diff >= 0.01: #Terminator loop
+		while diff >= 0.001: #Terminator loop
 			if likeli == oldvalue: #Terminate recursion if values equal and change difference parameter to start new recursive list
 				likeli = likeli
+				if (likeli - oldvalue) < 0.000001:
+					diff = 0.00001
 				time = time
 				diff = diff/10
 				oldvalue = 1
 				Functions().hillclimb(start, end, time=time, likeli=likeli, diff=diff, oldvalue=oldvalue)
 			else: #Recurvise function to look for maximum point
 				oldvalue = likeli
+				if (likeli - oldvalue) < 0.000001:
+					diff = 0.00001
 				timelist = [time-diff, time, time+diff]
-				valuelist = [Functions().expprob(start, end, time-diff), Functions().expprob(start, end, time), Functions().expprob(start, end, time+diff)]
+				valuelist = [Functions().expprob(start, end, x) for x in timelist]
 				likeli = max(valuelist) #Choose maximum value of likelihood
 				time = timelist[valuelist.index(likeli)]
 				Functions().hillclimb(start, end, time=time, likeli=likeli, diff=diff, oldvalue=oldvalue)
 		return likeli, time
+		
+	def likelihood(self, seq1, seq2, time, likeli=0, diff = 0.1, oldvalue=1):
+		"""Calculate time for maximum likelihood of obtaining sequence variation"""
+		if len(seq1) != len(seq2):
+			print ("Sequences not same length")
+		else:
+			while diff >= 0.001: #Terminator loop
+				if likeli == oldvalue: #Terminate recursion if values equal and change difference parameter to start new recursive list
+					if 1 > (likeli - oldvalue) > 0.000001:
+						diff = 0.00001
+					likeli = likeli
+					time = time
+					diff = diff/10
+					oldvalue = 1
+					Functions().likelihood(seq1, seq2, time=time, likeli=likeli, diff=diff, oldvalue=oldvalue)
+				else: #Recurvise function to look for maximum point
+					if 1 > (likeli - oldvalue) > 0.000001:
+						diff = 0.00001
+					oldvalue = likeli
+					timelist = [time-diff, time, time+diff]
+					vallist = [[Functions().expprob(seq1[y], seq2[y], x) for y in range(len(seq1))]for x in timelist]
+					valuelist = []
+					for z in range(len(vallist)):	
+						valuelist.append(reduce(lambda x, y: x*y, vallist[z]))
+					print (valuelist)
+					likeli = max(valuelist) #Choose maximum value of likelihood
+					time = timelist[valuelist.index(likeli)]
+					Functions().likelihood(seq1, seq2, time=time, likeli=likeli, diff=diff, oldvalue=oldvalue)
+			return likeli, time
+		
 		
 	def sample(self, list, prob, outputsize = 1):
 		"""Resamples with replacement from original discrete distribution to give newlist"""
@@ -168,8 +204,8 @@ class ContMarkov(SequenceEvo):
 		values = self.calcMargProb(time = time)
 		return values[self.sequence.index(start)][self.sequence.index(end)]
 		
-#model = ContMarkov(sequence = ["A", "C", "G", "T"], matrix = [[-1.916, 0.541, 0.787, 0.588], [0.148, -1.069, 0.415, 0.506], [0.286, 0.170, -0.591, 0.135], [0.525, 0.236, 0.594, -1.355]], time = 10) #Non GTR model
-model = ContMarkov(sequence = ["A","C","G","T"], matrix = [[-(1.87+4.25+2.53), 1.87, 4.25, 2.53],[1.87, -(1.87+0.62+8.7), 0.62, 8.7],[4.25, 0.62, -(4.25+0.62+1), 1], [2.53, 8.7, 1, -(2.53+8.7+1)]], time = 5) # GTR model
+model = ContMarkov(sequence = ["A", "C", "G", "T"], matrix = [[-1.916, 0.541, 0.787, 0.588], [0.148, -1.069, 0.415, 0.506], [0.286, 0.170, -0.591, 0.135], [0.525, 0.236, 0.594, -1.355]], time = 10) #Non GTR model
+#model = ContMarkov(sequence = ["A","C","G","T"], matrix = [[-(1.87+4.25+2.53), 1.87, 4.25, 2.53],[1.87, -(1.87+0.62+8.7), 0.62, 8.7],[4.25, 0.62, -(4.25+0.62+1), 1], [2.53, 8.7, 1, -(2.53+8.7+1)]], time = 5) # GTR model
 #states, times = model.simulation() 
 #print (states) # Use this to print the states through time
 #print (states, times) #Use this to print states and times
@@ -178,5 +214,6 @@ model = ContMarkov(sequence = ["A","C","G","T"], matrix = [[-(1.87+4.25+2.53), 1
 #print (model.calcMargProb()) #Use this to print the final stationary probabilities after given time 
 #print (ContMarkov(time = 100).endFreqs(trials=100)) #Use the original matrix
 #print (model.calcHistProb(["A","T","A","G"],[0, 0.09, 0.84, 0.15])) #Calculate probability of obtaining this series of data with the corresponding waiting times.
-#prob = (model.calcStateChange(start="G", end="A", time=2)) #Calculate probability of getting end state from start state in given time
-#print (Functions().hillclimb(start="G", end="A", time=int(random.randrange(model.time)))) #Often goes to infinity
+#print (model.calcStateChange(start="G", end="A", time=2)) #Calculate probability of getting end state from start state in given time
+#print (Functions().hillclimb(start="A", end="A", time=10)) #Often goes to infinity
+print (Functions().likelihood(seq1 = "AGA", seq2="TCT", time =5))

@@ -1,5 +1,7 @@
 from __future__ import (division, print_function)
 import ctmc #Need to be in python folder Lib
+from scipy.linalg import expm
+import numpy
 
 # ---> Defining Node and Tree classes <---
 class Node:
@@ -16,13 +18,14 @@ class Node:
 			self.sequence = []
 		else:
 			self.sequence = sequence
+		self.likeli = [] #Saves marginal probs for the four bases
 
 class Tree:
 	"""
 	Defines a class of phylogenetic tree, consisting of linked Node objects.
 	"""
 	
-	def __init__(self, data):
+	def __init__(self, data, model = None, seqmat = None):
 		"""
 		The constructor really needs to be more flexible, but for now we're 
 		going to define the whole tree structure by hand. This just uses
@@ -33,7 +36,16 @@ class Tree:
 
 		self.root = Node("root") #Define root
 		self.newicksplicer(data, self.root) #Splice newick data
-		self.setModels(self.root) #Default seqlength is 50, you can add any seqlength, default Model is JK, you can add model matrix
+		if seqmat is None:
+			if model is None:
+				self.setModels(self.root)
+			else:
+				self.setModels(self.root, Model = model) #Default seqlength is 50, you can add any seqlength, default Model is JK, you can add model matrix
+		else:
+			seqdict = {} #Create dictionary of sequences if sequence provided not simulated
+			for a in seqmat:
+				seqdict[a[0].replace(" ", "")]=a[1]
+			self.assignseqs(self.root, seqdict)
 		
 	def newicksplicer(self, data, base): 
 		""" 
@@ -120,11 +132,11 @@ class Tree:
 		if Model is None and seqlength is None: #Set starting sequence for root and change model or sequence length if required
 			node.sequence = [ctmc.ContMarkov().simulation()]
 		elif Model is not None and seqlength is None:
-			node.sequence = [ctmc.ContMarkov(model = Model).simulation()]
+			node.sequence = [ctmc.ContMarkov(matrix = Model).simulation()]
 		elif Model is None and seqlength is not None:
 			node.sequence = [ctmc.ContMarkov().simulation(seql=seqlength)]
 		else:
-			node.sequence = [ctmc.ContMarkov(model = Model).simulation(seql=seqlength)]
+			node.sequence = [ctmc.ContMarkov(matrix = Model).simulation(seql=seqlength)]
 		self.simulate(node)
 
 	def simulate(self,node):
@@ -151,9 +163,81 @@ class Tree:
 		for child in node.children:
 			self.printSeqs(child)
 		
-data = "((Species A:1, Species B:1):2 , (Species C: 3, (Species D:4, Species E:4):5):6)"
-
-Sim = Tree(data)
+	def assignseqs(self,node, dict):
+		"""Assign given sequences to correct node of tree"""
+		if node.name in dict:
+			node.sequence = dict[node.name] #Save sequence
+			node.likeli = self.statelistgen(node) #Save marginal probs
+		else:
+			for child in node.children:
+				self.assignseqs(child, dict)
+	
+	def statelistgen(self, node):
+		ambisites = 	{"A": [1,0,0,0], "C": [0,1,0,0], "G": [0,0,1,0], "T":[0,0,0,1],
+						"M": [1,1,0,0], "R": [1,0,1,0], "W": [1,0,0,1], "S": [0,1,1,0], "Y": [0,1,0,1], "K": [0,0,1,1],
+						"V": [1,1,1,0], "H": [1,1,0,1], "D":[1,0,1,1], "B": [0,1,1,1],
+						"N": [1,1,1,1], "-":[1,1,1,1]}	
+		output = []
+		for i in range(len(node.sequence)):
+			output.append(ambisites[node.sequence[i]])
+		return numpy.array(output)#Returns a numpy array of the genetic code in terms of marginal probs
+				
+class Likelihood:
+	"""Calculate likelihood of a tree given the data"""
+	
+	def __init__(self, matrix, node, likeli = 0):
+		self.matrix = numpy.array(matrix)
+		self.P = self.calcMargProb()
+		self.generator(node) #Fills all nodes with respective conditional probs
+		self.calclikeli(node) #Calculate likelihood
+		
+	def calcMargProb(self, time=100):
+		#Calculate Marginal Probabilities of each outcome
+		return (expm((numpy.array(self.matrix) * time)))	
+		
+	def generator(self, node):
+		value = [] #To hold probabilities
+		brl = [] #To hold branch lengths
+		for child in node.children:
+			if child.likeli == []:
+				self.generator(child)
+			value.append(child.likeli)
+			brl.append(child.brl)
+		node.likeli = self.calculator(value[0], value[1], brl[0], brl[1])
+			
+	def calculator(self, val1, val2, brl1, brl2):
+		"""Calculates probability for node given probabilities for the descendent nodes"""
+		matrix1 = self.calcMargProb(time=brl1).transpose() #Calculate matrix and transpose it to fit maths model for branch 1
+		matrix2 = self.calcMargProb(time=brl2).transpose() #Calculate matrix and transpose it to fit maths model for branch 2
+		get1 = [x.dot(matrix1) for x in val1] #Multiply Q matrix with all items in one base, and do it for all bases in sequence for branch 1
+		get2 = [x.dot(matrix2) for x in val2] #Multiply Q matrix with all items in one base, and do it for all bases in sequence for branch 2
+		masternext = [] 
+		for i in range(len(get1)):
+			nextcond = []
+			for j in range(len(get1[i])):
+				nextcond.append(get1[i][j] * get2[i][j]) #Just to set up the maths, prob for next function is the product of each row entry
+			masternext.append(nextcond)
+		return numpy.array(masternext) #Return new probability matrix for ancestral node
+	
+	def calclikeli(self, node):
+		all = (self.P[0].dot(node.likeli.transpose())) #Multiply with marginal probabilities and add the terms to get total likelihood for each site
+		likeli = 1
+		for num in all:
+			likeli *= num #Multiply likelihood of each site to give total likelihood for sequences
+		print ("The likelihood of the given data is", likeli) #Print likelihood
+	
+data = "((Sp A:0.1, Sp B:0.13):0.13 , (Sp C: 0.015, (Sp D:0.1, Sp E:0.15):0.3):0.02)"
+seqmat = 	[["Sp A", "NACA"],
+			["Sp B", "NACC"],
+			["Sp C", "NAGG"],
+			["Sp D", "NATT"],
+			["Sp E", "NATA"]]
+matrix = 	[[-0.96, 0.38,0.39,0.19],
+			[0.29,-0.78,0.39,0.1],
+			[0.58,0.76,-1.44,0.1],
+			[0.58,0.38,0.19,-1.15]]
+Sim = Tree(data, model = matrix, seqmat=seqmat)
+Likelihood(matrix, Sim.root)
 #Sim.printSeqs(Sim.root)
 #Sim.printNames(Sim.root)
 #print (Sim.treeLength(Sim.root))

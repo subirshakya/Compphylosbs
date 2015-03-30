@@ -226,7 +226,7 @@ class Likelihood:
 			likeli *= num #Multiply likelihood of each site to give total likelihood for sequences
 		print ("The likelihood of the given data is", likeli) #Print likelihood
 	
-data = "((Sp A:0.1, Sp B:0.13):0.13 , (Sp C: 0.015, (Sp D:0.1, Sp E:0.15):0.3):0.02)"
+data = "((Sp A:0.1, Sp B:0.13):0.13 , (Sp C: 0.15, (Sp D:0.1, Sp E:0.15):0.3):0.02)"
 seqmat = 	[["Sp A", "NACA"],
 			["Sp B", "NACC"],
 			["Sp C", "NAGG"],
